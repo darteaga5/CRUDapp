@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <title>CRUD 4</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+      <style type="text/css">
+         .table {
+         table-layout:fixed;
+         }
+         .table td {
+         white-space: pre-wrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         }
+      </style>
+   </head>
+   <body>
+      <div class="container">
+         <h1>Box Office Tracker!</h1>
+         <table class="listGrid table">
+            <tr>
+               <th>Move Title</th>
+               <th>Studio</th>
+               <th>Year</th>
+               <th>Box Office</th>
+               <th></th>
+            </tr>
+         </table>
+         <button type="button" id="addBtn" class="btn btn-primary btn-lg">
+         Add
+         </button>
+         <!--  Partials are below -->
+         <!-- Add Modal -->
+         <div class="modal fade" id="addModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+               <div class="modal-content">
+                  <div class="modal-header">
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                     <h4 class="modal-title" id="addModalLabel">Add Movie Record</h4>
+                  </div>
+                  <div class="modal-body">
+                     <form id="addForm" class="form">
+                        <div class="form-group">
+                           <label for="movie_title">Movie Title</label>
+                           <input type="text" name="movie_title" id="movie_title" value=""  class="form-control">
+                        </div>
+                        <div class="form-group">
+                           <label for="studio">Studio</label>
+                           <input type="text" name="studio" id="studio" value=""  class="form-control">
+                        </div>
+                        <div class="form-group">
+                           <label for="year">Year</label>
+                           <input type="text" name="year" id="year" value=""  class="form-control">
+                        </div>
+                        <div class="form-group">
+                           <label for="bo_cash">Box Office</label>
+                           <input type="text" name="bo_cash" id="bo_cash" value=""  class="form-control">
+                        </div>
+                        <input type="hidden" name="movie_id" id="movie_id" value="">
+                  </div>
+                  <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" name="action" id="actionBtn" value="Add">Add</button>
+                  </div>
+               </div>
+               </form>
+            </div>
+         </div>
+         <!-- Delete modal -->
+         <div id="deleteModal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+               <div class="modal-content">
+                  <div class="modal-header">
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                     <h4 class="modal-title" id="deleteModalLabel">Confirm Delete</h4>
+                  </div>
+                  <div class="modal-footer">
+                     <form>
+                        <input type="hidden" name="movie_id" id="deleteConfirm_movie_id" value="">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" id="deleteBtn" class="btn btn-primary" value="Delete">Delete</button>
+                     </form>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <br>
+         <br>
+         <!-- End partials -->
+      </div>
+      <!-- jquery -->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+      <!-- used for the datatables plugin -->
+      <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.css">
+      <script type="text/javascript" charset="utf-8" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.js"></script>
+      <!-- bookstrap -->
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script src="./custom.js"></script>
+      <script>
+         var SBC = {};
+          
+         SBC.loadData = function () {
+          
+          $(".listGrid").html("<thead><tr><th>Movie Title</th><th>Studio</th><th>Year</th><th>Box Office(millions)</th><th>Poster</th></tr></thead>");
+         
+          $.getJSON("./api.php", function(data) {
+           
+               if (data.length == 0) {
+             
+               }
+               else {
+                $.each(data, function (index,value) {
+
+             
+
+               var str = "";
+               str += "<tr><td>"+value.movie_title+"</td>";
+               str += "<td>"+value.studio+"</td>";
+               str += "<td>"+value.year+"</td>";
+               str += "<td>"+value.bo_cash+"</td>";
+               
+               
+               str += "<td><div class='row'>";
+                  
+                           str += "<div class='col-sm-6'><button type='button' class='btn btn-default' onclick='SBC.editForm(" + JSON.stringify(value) + ")'><span class='glyphicon glyphicon-pencil'></span></button></div>";
+         
+             
+                           str += "<div class='col-sm-6'><button type='button' class='btn btn-default' onclick='SBC.confirmDelete(" + value.movie_id + ");'><span class='glyphicon glyphicon-trash'></span></button></div>";
+         
+               str += "</div></td></tr>";
+         
+               $(str).appendTo(".listGrid");
+              });
+         
+               
+             
+            }
+                
+                $('.listGrid').DataTable({
+                                "order": [[ 1, 'asc' ], [ 1, 'asc' ]],
+                                "lengthMenu": [[5, 10, 20, -1], [5, 10, 20, "All"]],
+                                "bDestroy": true
+                                // retrieve: true,
+                                // searching:false
+                        });
+         
+              }); 
+         
+         
+         }; /* loadData */
+         
+         
+         
+         SBC.confirmDelete = function confirmDelete(id) {
+           $("#deleteConfirm_movie_id").attr('value',id);
+           $("#deleteBtn").click(function () {
+            SBC.doDelete();
+           })
+           $('#deleteModal').modal('show');  
+         
+         }; /* confirmDelete*/
+         
+         
+         SBC.doDelete = function doDelete() {
+          
+          var id = $("#deleteConfirm_movie_id").attr('value');
+              
+          $.ajax({
+                 type: "DELETE",
+                 url: "./api.php/"+id,
+                 success: function (data, status, xhr) {
+            $("#deleteBtn").unbind("click");
+            $("#deleteModal").modal('hide');
+            SBC.loadData();
+                 },
+             
+                 error: function (xhr, status) {
+                     // error handler
+                     alert('Delete error');
+                 }
+                });   
+         }; /* doDelete */
+
+         
+         SBC.doAdd = function doAdd() {
+          
+          var obj = {};
+          obj.movie_title = $("#movie_title").val();
+          obj.studio = $("#studio").val();
+
+          obj.year = $("#year").val();
+          obj.bo_cash = $("#bo_cash").val();
+
+          if( !(isNaN(obj.movie_title)) || (obj.movie_title).includes("<script>") ) {
+            alert("Please input a valid movie title");
+            return false;
+          } else if( !(isNaN(obj.studio)) || (obj.studio).includes("<script>") ) {
+            alert("Please input a valid studio name");
+            return false;
+          } else if( (isNaN(obj.year)) || (obj.year).includes("<script>")
+                      || obj.year < 1900 || obj.year > 2016) {
+            alert("Please input a valid year");
+            return false;
+          } else if( (isNaN(obj.bo_cash)) || (obj.bo_cash).includes("<script>")
+                    || obj.cash < 0) {
+            alert("Please input a valid number");
+            return false;
+          }
+         
+          jQuery.ajax({
+                 type: "POST",
+                 url: "./api.php",
+                 data: JSON.stringify(obj),
+                 contentType: "application/json; charset=utf-8",
+                 dataType: "json",
+                 success: function (data, status, jqXHR) {
+                      
+                    $("#actionBtn").unbind("click");
+            $("#addModal").modal('hide');
+            SBC.loadData();
+                 },
+             
+                 error: function (jqXHR, status) {            
+                      // error handler
+                 }
+         
+                });     
+         }; /* doAdd */
+         
+         
+         
+         SBC.doUpdate = function doUpdate() {
+          
+          var obj = {};
+          obj.movie_title = $("#movie_title").val();
+          obj.studio = $("#studio").val();
+          obj.year = $("#year").val();
+          obj.bo_cash = $("#bo_cash").val();
+          obj.movie_id = $("#movie_id").val();
+
+          if( !(isNaN(obj.movie_title)) || (obj.movie_title).includes("<script>") ) {
+            alert("Please input a valid movie title");
+            return false;
+          } else if( !(isNaN(obj.studio)) || (obj.studio).includes("<script>") ) {
+            alert("Please input a valid studio name");
+            return false;
+          } else if( (isNaN(obj.year)) || (obj.year).includes("<script>")
+                    || obj.year < 1900 || obj.year > 2016) {
+            alert("Please input a valid year");
+            return false;
+          } else if( (isNaN(obj.bo_cash)) || (obj.bo_cash).includes("<script>")
+                      || obj.cash < 0) {
+            alert("Please input a valid number");
+            return false;
+          }
+                
+          jQuery.ajax({
+                 type: "PUT",
+                 url: "./api.php/"+obj.movie_id,
+                 data: JSON.stringify(obj),
+                 contentType: "application/json; charset=utf-8",
+                 dataType: "json",
+                 success: function (data, status, jqXHR) {
+                      
+                    $("#actionBtn").unbind("click");
+            $("#addModal").modal('hide');
+            SBC.loadData();
+                 },
+             
+                 error: function (jqXHR, status) {            
+                      // error handler
+                 }
+                });     
+         } /* doUpdate */
+         
+          
+         SBC.editForm = function editRecord(record) {
+           
+           if (!record) {
+          // no data so it is a straight add
+          
+          // clear the fields 
+          $("#movie_title").val('');
+             $("#studio").val('');
+             $("#year").val('');
+             $("#bo_cash").val('');
+             $("#movie_id").val('');
+          
+          $("#addModalLabel").html("Add Record");
+         
+             $("#actionBtn").html('Add');
+             $("#actionBtn").click(function () {
+             SBC.doAdd(); 
+             });
+             
+           } else {
+             // data passed so it is an edit
+             
+           
+             $("#movie_title").val(record.movie_title);
+             $("#studio").val(record.studio);
+             $("#year").val(record.year);
+             $("#bo_cash").val(record.bo_cash);
+             $("#movie_id").val(record.movie_id);
+            
+           
+             $("#addModalLabel").html("Edit Record");
+         
+             $("#actionBtn").html('Update');
+             $("#actionBtn").click(function () {
+             SBC.doUpdate(); 
+             });
+           }
+           
+          // focus the first field
+          $('#addModal').on('shown.bs.modal', function () {
+          $('#movie_title').focus()
+          });
+          
+          $('#addModal').modal('show');
+           
+           } /* editForm */
+         
+         
+         
+           // bind load events 
+           $(document).ready(function () {
+          
+          SBC.loadData();
+               
+          $("#addBtn").click(function () {
+             SBC.editForm();  
+          });
+         
+         
+                
+            });
+         
+         
+      </script>
+   </body>
+</html>
